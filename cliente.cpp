@@ -9,17 +9,23 @@
 
 using namespace std;
 
-int main() {
+int main(int argc, char* argv[]) {
+    if (argc == 1 || argc > 3) {
+        cout << "Por favor siga o formato do programa: ./cliente SEU_IP PORTA" << endl;
+        return 0;
+    }
+    
+    string ipaddress = argv[1];
+    int port = stoi(argv[2]);
+
     // Create a socket
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1) {
+        cout << "Can't create socket" << endl;
         return 1;
     }
 
     // Create a hint structure for the server we're connecting with
-    int port = 54000;
-    string ipaddress = "127.0.0.1";
-
     sockaddr_in hint;
     hint.sin_family = AF_INET;
     hint.sin_port = htons(port);

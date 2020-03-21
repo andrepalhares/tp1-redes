@@ -9,9 +9,13 @@
 
 using namespace std;
 
-int main() {
-
-    // TODO: Receber a porta por parametro
+int main(int argc, char* argv[]) {
+    if (argc == 1 || argc > 2) {
+        cout << "Por favor siga o formato do programa: ./servidor PORTA" << endl;
+        return 0;
+    }
+    
+    int port = stoi(argv[1]);
 
     // Create a socket
     int listening = socket(AF_INET, SOCK_STREAM, 0);
@@ -23,7 +27,7 @@ int main() {
     // Bind the socket to a IP / port
     sockaddr_in hint;
     hint.sin_family = AF_INET;
-    hint.sin_port = htons(54000);
+    hint.sin_port = htons(port);
     inet_pton(AF_INET, "0.0.0.0", &hint.sin_addr);
 
     if (bind(listening, (sockaddr*)&hint, sizeof(hint)) == -1) {
