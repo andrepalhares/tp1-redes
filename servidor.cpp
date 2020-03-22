@@ -6,16 +6,40 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <string>
+#include <fstream>
+#include <time.h>
 
 using namespace std;
 
 int main(int argc, char* argv[]) {
+    // Lendo os parâmetros pela linha de comando
     if (argc == 1 || argc > 2) {
         cout << "Por favor siga o formato do programa: ./servidor PORTA" << endl;
         return 0;
     }
     
     int port = stoi(argv[1]);
+    srand( (unsigned)time(NULL) );
+    int rand_index = rand() % 78 + 1;
+    string palavra;
+
+    // Lendo arquivo de palavras
+    int line_index = 0;
+    string line;
+    ifstream myFile("palavras.txt");
+
+    if(myFile.is_open()) {
+        while(getline(myFile, line)) {
+            line_index++;
+            if (line_index == rand_index) {
+                palavra = line;
+                cout << palavra.length() - 1 << endl;
+            }
+        }
+        myFile.close();
+    } else {
+        cout << "File failed " << endl;
+    }
 
     // Create a socket
     int listening = socket(AF_INET, SOCK_STREAM, 0);
@@ -61,6 +85,8 @@ int main(int argc, char* argv[]) {
     int result = getnameinfo((sockaddr*)&client, sizeof(client), host, NI_MAXHOST, svc, NI_MAXSERV, 0);
     if (result) {
         cout << host << " connected on " << svc << endl;
+        char testePalavra[255] = "fearless";
+        send(clientSocket, testePalavra, 255, 0);
     } else {
         inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);
         cout << host << " connected on " << ntohs(client.sin_port) << endl;

@@ -40,6 +40,11 @@ int main(int argc, char* argv[]) {
     // While loop
     char buf[4096];
     string userInput;
+
+    // Recebendo primeira mensagem
+    memset(buf, 0, 4096);
+    int bytesReceived = recv(sock, buf, 4096, 0);
+    cout << "Palavra: " << string(buf, bytesReceived) << endl;
     
     do {
         // Enter lines of text
