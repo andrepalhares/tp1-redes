@@ -8,8 +8,30 @@
 #include <string>
 #include <fstream>
 #include <time.h>
+#include <list>
 
 using namespace std;
+
+void showlist(list <int> g) 
+{ 
+    list <int> :: iterator it; 
+    for(it = g.begin(); it != g.end(); ++it) 
+        cout << '\t' << *it; 
+    cout << '\n'; 
+} 
+
+
+list<int> retornaPosicoes(string palavra, char letra) {
+    list <int> posicoes;
+    int i = 0;
+    for(char& c : palavra) {
+        i++;
+        if (c == letra) {
+            posicoes.push_back(i);
+        }
+    }
+    return posicoes;
+}
 
 int main(int argc, char* argv[]) {
     // Lendo os parâmetros pela linha de comando
@@ -40,6 +62,14 @@ int main(int argc, char* argv[]) {
     } else {
         cout << "File failed " << endl;
     }
+
+    // Funcao pra retornar as posicoes da letra escolhida na palavra sorteada
+    int a = 97 ;
+    cout << (char)a << endl;
+    list<int> posicoes = retornaPosicoes(palavra, char(a));
+    showlist(posicoes); // posicoes.size() para retornar a quantidade de ocorrências
+
+    // Salvar ocorrências para determinar quando o jogo acabou
 
     // Create a socket
     int listening = socket(AF_INET, SOCK_STREAM, 0);
