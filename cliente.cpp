@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    cout << "existe? " << argv[1][0] << endl;
+    // cout << "existe? " << argv[1][0] << endl;
     
     string ipaddress = argv[1];
     int port = stoi(argv[2]);

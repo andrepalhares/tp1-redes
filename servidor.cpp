@@ -12,6 +12,27 @@
 
 using namespace std;
 
+list<int> letraExisteNaPalavra(string letra, string palavra) {
+    list<int> listaPosicoes;
+    int codigo = stoi(letra);
+    char caractere = char(codigo);
+
+    int posicao = palavra.find(caractere);
+
+    if(posicao > 0 && posicao <= palavra.size()) {
+        listaPosicoes.push_back(posicao + 1);
+
+        for(size_t i = posicao + 1; i < palavra.size(); i++) {
+            if(caractere == palavra[i]) {
+                listaPosicoes.push_back(i + 1);
+            }
+        }
+    }
+
+    return listaPosicoes;
+
+}
+
 void showlist(list <int> g) 
 { 
     list <int> :: iterator it; 
@@ -41,7 +62,7 @@ int main(int argc, char* argv[]) {
     }
     
     int port = stoi(argv[1]);
-    srand( (unsigned)time(NULL) );
+    srand((unsigned)time(NULL));
     int rand_index = rand() % 78 + 1;
     string palavra;
 
@@ -55,6 +76,7 @@ int main(int argc, char* argv[]) {
             line_index++;
             if (line_index == rand_index) {
                 palavra = line;
+                cout << palavra << endl;
                 cout << palavra.length() - 1 << endl;
             }
         }
@@ -115,7 +137,7 @@ int main(int argc, char* argv[]) {
     int result = getnameinfo((sockaddr*)&client, sizeof(client), host, NI_MAXHOST, svc, NI_MAXSERV, 0);
     if (result) {
         cout << host << " connected on " << svc << endl;
-        char testePalavra[255] = "fearless";
+        char testePalavra[255] = "qualquer coisa";
         send(clientSocket, testePalavra, 255, 0);
     } else {
         inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);
@@ -143,6 +165,7 @@ int main(int argc, char* argv[]) {
         cout << "Received: " << string(buf, 0, bytesRecv) << endl;
         
         // TODO: Jogo de forca
+        letraExisteNaPalavra(string(buf, 0, bytesRecv), palavra);
 
         // Resend message
         send(clientSocket, buf, bytesRecv + 1, 0);
