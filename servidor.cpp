@@ -9,49 +9,70 @@
 #include <fstream>
 #include <time.h>
 #include <list>
+#include <vector>
 
 using namespace std;
 
-list<int> letraExisteNaPalavra(string letra, string palavra) {
-    list<int> listaPosicoes;
+struct Palavra {
+    string palavra;
+    vector<bool> descobertas;
+};
+
+Palavra sortearPalavra() {
+    Palavra palavraSorteada;
+    srand((unsigned)time(NULL));
+    int rand_index = rand() % 78 + 1;
+    int line_index = 0;
+    string line;
+    ifstream myFile("palavras.txt");
+
+    if(myFile.is_open()) {
+        while(getline(myFile, line)) {
+            line_index++;
+            if (line_index == rand_index) {
+                palavraSorteada.palavra = line;
+                for (size_t i=0; i < palavraSorteada.palavra.length() - 1; i ++) {
+                    palavraSorteada.descobertas.push_back(false);
+                }
+                cout << palavraSorteada.palavra << endl;
+                cout << palavraSorteada.palavra.length() - 1 << endl;
+            }
+        }
+        myFile.close();
+    } else {
+        cout << "File failed " << endl;
+    }
+
+    return palavraSorteada;
+}
+
+Palavra letraExisteNaPalavra(string letra, Palavra palavraSorteada) {
     int codigo = stoi(letra);
     char caractere = char(codigo);
 
-    int posicao = palavra.find(caractere);
+    int posicao = palavraSorteada.palavra.find(caractere);
 
-    if(posicao > 0 && posicao <= palavra.size()) {
-        listaPosicoes.push_back(posicao + 1);
+    if(posicao >= 0 && posicao <= palavraSorteada.palavra.size()) {
+        palavraSorteada.descobertas[posicao] = true;
 
-        for(size_t i = posicao + 1; i < palavra.size(); i++) {
-            if(caractere == palavra[i]) {
-                listaPosicoes.push_back(i + 1);
+        for(size_t i = posicao + 1; i < palavraSorteada.palavra.size(); i++) {
+            if(caractere == palavraSorteada.palavra[i]) {
+                palavraSorteada.descobertas[i] = true;
             }
         }
     }
 
-    return listaPosicoes;
-
+    return palavraSorteada;
 }
 
-void showlist(list <int> g) 
-{ 
-    list <int> :: iterator it; 
-    for(it = g.begin(); it != g.end(); ++it) 
-        cout << '\t' << *it; 
-    cout << '\n'; 
-} 
-
-
-list<int> retornaPosicoes(string palavra, char letra) {
-    list <int> posicoes;
-    int i = 0;
-    for(char& c : palavra) {
-        i++;
-        if (c == letra) {
-            posicoes.push_back(i);
+bool checarSeAcabouJogo(Palavra palavraSorteada) {
+    for (size_t i = 0; i < palavraSorteada.descobertas.size(); i++) {
+        if (palavraSorteada.descobertas[i] == false) {
+            return false;
         }
     }
-    return posicoes;
+
+    return true;
 }
 
 int main(int argc, char* argv[]) {
@@ -61,37 +82,12 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     
+    //Inicializando parâmetros
     int port = stoi(argv[1]);
-    srand((unsigned)time(NULL));
-    int rand_index = rand() % 78 + 1;
-    string palavra;
+    bool gameOver;
 
-    // Lendo arquivo de palavras
-    int line_index = 0;
-    string line;
-    ifstream myFile("palavras.txt");
-
-    if(myFile.is_open()) {
-        while(getline(myFile, line)) {
-            line_index++;
-            if (line_index == rand_index) {
-                palavra = line;
-                cout << palavra << endl;
-                cout << palavra.length() - 1 << endl;
-            }
-        }
-        myFile.close();
-    } else {
-        cout << "File failed " << endl;
-    }
-
-    // Funcao pra retornar as posicoes da letra escolhida na palavra sorteada
-    int a = 97 ;
-    cout << (char)a << endl;
-    list<int> posicoes = retornaPosicoes(palavra, char(a));
-    showlist(posicoes); // posicoes.size() para retornar a quantidade de ocorrências
-
-    // Salvar ocorrências para determinar quando o jogo acabou
+    //Sorteando a palavra
+    Palavra palavraSorteada = sortearPalavra();
 
     // Create a socket
     int listening = socket(AF_INET, SOCK_STREAM, 0);
@@ -165,7 +161,11 @@ int main(int argc, char* argv[]) {
         cout << "Received: " << string(buf, 0, bytesRecv) << endl;
         
         // TODO: Jogo de forca
-        letraExisteNaPalavra(string(buf, 0, bytesRecv), palavra);
+        palavraSorteada = letraExisteNaPalavra(string(buf, 0, bytesRecv), palavraSorteada);
+        if (checarSeAcabouJogo(palavraSorteada)) {
+            cout << "Congratulations! You discovered the right word: " << palavraSorteada.palavra << endl;
+            break;
+        }
 
         // Resend message
         send(clientSocket, buf, bytesRecv + 1, 0);
