@@ -6,8 +6,39 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <string>
+#include <bitset>
+#include <vector>
 
 using namespace std;
+
+struct Mensagem {
+    char* mensagem;
+};
+
+char* ConverteChar(int numero) {
+    string temp_str = bitset<8>(numero).to_string();
+    char* char_type = new char[temp_str.length()];
+    strcpy(char_type, temp_str.c_str());
+    
+    return char_type;
+}
+
+Mensagem CriaMensagemTipo(int numero) {
+    Mensagem msg;
+    msg.mensagem = ConverteChar(numero);
+
+    return msg;
+}
+
+Mensagem CriaMensagem(string letra) {
+    char* cstr = new char [letra.length()+1];
+    strcpy (cstr, letra.c_str());
+
+    Mensagem msg;
+    msg.mensagem = cstr;
+
+    return msg;
+}
 
 int main(int argc, char* argv[]) {
     if (argc == 1 || argc > 3) {
@@ -46,26 +77,43 @@ int main(int argc, char* argv[]) {
     // Recebendo primeira mensagem
     memset(buf, 0, 4096);
     int bytesReceived = recv(sock, buf, 4096, 0);
-    cout << "Palavra: " << string(buf, bytesReceived) << endl;
+    cout << string(buf, bytesReceived) << endl;
     
     do {
         // Enter lines of text
-        cout << "Message: ";
+        cout << "Message: "; // TODO: Apagar
         getline(cin, userInput);
 
         // Send to server
-        int sendResult = send(sock, userInput.c_str(), userInput.size() + 1, 0);
+        // Tratar a mensagem, colocando um tipo
+        vector<Mensagem> msgTipo2;
+
+        msgTipo2.push_back(CriaMensagemTipo(2));
+        msgTipo2.push_back(CriaMensagem(userInput));
+
+        int sendResult = send(sock, msgTipo2[1].mensagem, 8, 0);
         if (sendResult == -1) {
             cout << "Could not send to server!" << endl;
             continue;
         }
+        // if (bytesReceived == 0) {
+        //     cout << "The server disconnected" << endl;
+        //     break;
+        // } NOT WORKING
 
         // Wait for response
         memset(buf, 0, 4096);
         int bytesReceived = recv(sock, buf, 4096, 0);
+        string mensagemRecebida = string(buf, bytesReceived);
+        string mensagemSucesso =  bitset<8>(4).to_string();
 
         // Display response
-        cout << "Server: " << string(buf, bytesReceived) << endl;
+        cout << mensagemRecebida << endl;
+
+        // TODO: Finalizando conexão quando acertar a palavra 
+        if (mensagemSucesso == mensagemRecebida) {
+            break;
+        }
 
     } while(true);
 

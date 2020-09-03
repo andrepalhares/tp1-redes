@@ -10,8 +10,14 @@
 #include <time.h>
 #include <list>
 #include <vector>
+#include <sstream>
+#include <bitset>
 
 using namespace std;
+
+struct Mensagem {
+    char* mensagem;
+};
 
 struct Palavra {
     string palavra;
@@ -19,12 +25,12 @@ struct Palavra {
 };
 
 Palavra sortearPalavra() {
-    Palavra palavraSorteada;
     srand((unsigned)time(NULL));
     int rand_index = rand() % 78 + 1;
     int line_index = 0;
     string line;
     ifstream myFile("palavras.txt");
+    Palavra palavraSorteada;
 
     if(myFile.is_open()) {
         while(getline(myFile, line)) {
@@ -46,9 +52,23 @@ Palavra sortearPalavra() {
     return palavraSorteada;
 }
 
+char ConverteParaBinario(string str) {
+    char parsed = 0;
+    
+    for (int i = 0; i < 8; i++) {
+        if (str[i] == '1') {
+            parsed |= 1 << (7 - i);
+        }
+    }
+
+    return parsed;
+}
+
 Palavra letraExisteNaPalavra(string letra, Palavra palavraSorteada) {
-    int codigo = stoi(letra);
-    char caractere = char(codigo);
+    // int codigo = stoi(letra);
+    // char caractere = char(codigo);
+    char caractere = ConverteParaBinario(letra);
+    cout << caractere << endl;
 
     int posicao = palavraSorteada.palavra.find(caractere);
 
@@ -73,6 +93,21 @@ bool checarSeAcabouJogo(Palavra palavraSorteada) {
     }
 
     return true;
+}
+
+char* ConverteChar(int numero) {
+    string temp_str = bitset<8>(numero).to_string();
+    char* char_type = new char[temp_str.length()];
+    strcpy(char_type, temp_str.c_str());
+    
+    return char_type;
+}
+
+Mensagem CriaMensagem(int numero) {
+    Mensagem msg;
+    msg.mensagem = ConverteChar(numero);
+
+    return msg;
 }
 
 int main(int argc, char* argv[]) {
@@ -132,9 +167,12 @@ int main(int argc, char* argv[]) {
 
     int result = getnameinfo((sockaddr*)&client, sizeof(client), host, NI_MAXHOST, svc, NI_MAXSERV, 0);
     if (result) {
-        cout << host << " connected on " << svc << endl;
-        char testePalavra[255] = "qualquer coisa";
-        send(clientSocket, testePalavra, 255, 0);
+        vector<Mensagem> msgTipo1;
+
+        msgTipo1.push_back(CriaMensagem(1));
+        msgTipo1.push_back(CriaMensagem(palavraSorteada.palavra.length() - 1));
+
+        send(clientSocket, msgTipo1[1].mensagem, 8, 0);
     } else {
         inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);
         cout << host << " connected on " << ntohs(client.sin_port) << endl;
@@ -163,13 +201,18 @@ int main(int argc, char* argv[]) {
         // TODO: Jogo de forca
         palavraSorteada = letraExisteNaPalavra(string(buf, 0, bytesRecv), palavraSorteada);
         if (checarSeAcabouJogo(palavraSorteada)) {
-            cout << "Congratulations! You discovered the right word: " << palavraSorteada.palavra << endl;
-            break;
+            vector<Mensagem> msgTipo4;
+
+            msgTipo4.push_back(CriaMensagem(4));
+
+            send(clientSocket, msgTipo4[0].mensagem, 8, 0);
+            // break;
         }
+
+        // TODO: Criar método para enviar a quantidade e posicoes da letra escolhida
 
         // Resend message
         send(clientSocket, buf, bytesRecv + 1, 0);
-
     }
 
     // Close socket
