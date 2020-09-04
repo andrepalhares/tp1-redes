@@ -15,109 +15,123 @@ struct Mensagem {
     char* mensagem;
 };
 
-char* ConverteChar(int numero) {
-    string temp_str = bitset<8>(numero).to_string();
-    char* char_type = new char[temp_str.length()];
-    strcpy(char_type, temp_str.c_str());
+char* converteChar(int numero) {
+    string stringTemporaria = bitset<8>(numero).to_string();
+
+    char* numeroChar = new char[stringTemporaria.length()];
+
+    strcpy(numeroChar, stringTemporaria.c_str());
     
-    return char_type;
+    return numeroChar;
 }
 
-Mensagem CriaMensagemTipo(int numero) {
+Mensagem criaMensagemTipo(int numero) {
     Mensagem msg;
-    msg.mensagem = ConverteChar(numero);
+    msg.mensagem = converteChar(numero);
 
     return msg;
 }
 
-Mensagem CriaMensagem(string letra) {
-    char* cstr = new char [letra.length()+1];
-    strcpy (cstr, letra.c_str());
+Mensagem criaMensagem(string letra) {
+    char* mensagemChar = new char [letra.length() + 1];
+    strcpy (mensagemChar, letra.c_str());
 
     Mensagem msg;
-    msg.mensagem = cstr;
+    msg.mensagem = mensagemChar;
 
     return msg;
 }
 
 int main(int argc, char* argv[]) {
     if (argc == 1 || argc > 3) {
-        cout << "Por favor siga o formato do programa: ./cliente SEU_IP PORTA" << endl;
+        // Lendo os parâmetros pela linha de comando
+        cout << "ERRO: Por favor siga o formato do programa: ./cliente SEU_IP PORTA" << endl;
+        return 0;
+    }
+    
+    //Inicializando parâmetros
+    string enderecoIP = argv[1];
+    int porta = stoi(argv[2]);
+
+    // Criando um socket
+    int socketCliente = socket(AF_INET, SOCK_STREAM, 0);
+    if (socketCliente == -1) {
+        cout << "ERRO: Não foi possível criar o socket" << endl;
         return 0;
     }
 
-    // cout << "existe? " << argv[1][0] << endl;
-    
-    string ipaddress = argv[1];
-    int port = stoi(argv[2]);
+    // Associando o socket a IP e porta
+    sockaddr_in endereco;
+    endereco.sin_family = AF_INET;
+    endereco.sin_port = htons(porta);
+    inet_pton(AF_INET, enderecoIP.c_str(), &endereco.sin_addr);
 
-    // Create a socket
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock == -1) {
-        cout << "Can't create socket" << endl;
-        return 1;
-    }
-
-    // Create a hint structure for the server we're connecting with
-    sockaddr_in hint;
-    hint.sin_family = AF_INET;
-    hint.sin_port = htons(port);
-    inet_pton(AF_INET, ipaddress.c_str(), &hint.sin_addr);
-
-    // Connect to the server on the socket
-    int connectRes = connect(sock, (sockaddr*)&hint, sizeof(hint));
+    // Tentando se conectar ao servidor
+    int connectRes = connect(socketCliente, (sockaddr*)&endereco, sizeof(endereco));
     if (connectRes == -1) {
-        return 1;
+        return 0;
     }
 
-    // While loop
-    char buf[4096];
-    string userInput;
+    // Iniciando o jogo da forca
+    vector<Mensagem> msgTipo2;
+    char buffer[1024];
+    string palpite;
 
     // Recebendo primeira mensagem
-    memset(buf, 0, 4096);
-    int bytesReceived = recv(sock, buf, 4096, 0);
-    cout << string(buf, bytesReceived) << endl;
-    vector<Mensagem> msgTipo2;
+    memset(buffer, 0, 1024);
+    int bytesRecebidos = recv(socketCliente, buffer, 1024, 0);
+    if (bytesRecebidos == -1) {
+        cout << "ERRO: Não foi possível obter a mensagem" << endl;
+        return 0;
+    }
+    if (bytesRecebidos == 0) {
+        cout << "O Servidor se desconectou" << endl;
+        return 0;
+    }
+
+    string mensagem1 = string(buffer, bytesRecebidos);
+    cout << mensagem1 << endl;
     
     do {
-        // Enter lines of text
+        // Cliente deve dar um palpite
         cout << "Message: "; // TODO: Apagar
-        getline(cin, userInput);
+        getline(cin, palpite);
 
-        // Send to server
-        // Tratar a mensagem, colocando um tipo
-        msgTipo2.push_back(CriaMensagemTipo(2));
-        msgTipo2.push_back(CriaMensagem(userInput));
+        // Tratar a mensagem, colocando um tipo antes de enviar para o Servidor
+        msgTipo2.push_back(criaMensagemTipo(2));
+        msgTipo2.push_back(criaMensagem(palpite));
 
-        int sendResult = send(sock, msgTipo2[1].mensagem, 8, 0);
+        int sendResult = send(socketCliente, msgTipo2[1].mensagem, 8, 0);
         msgTipo2.clear();
+
         if (sendResult == -1) {
-            cout << "Could not send to server!" << endl;
+            cout << "ERRO: Não foi possível enviar mensagem ao servidor" << endl;
             continue;
         }
-        // if (bytesReceived == 0) {
-        //     cout << "The server disconnected" << endl;
-        //     break;
-        // } NOT WORKING
 
-        // Wait for response
-        memset(buf, 0, 4096);
-        int bytesReceived = recv(sock, buf, 4096, 0);
-        string mensagemRecebida = string(buf, bytesReceived);
-        string mensagemSucesso =  bitset<8>(4).to_string();
+        memset(buffer, 0, 1024);
+        int bytesRecebidos = recv(socketCliente, buffer, 1024, 0);
+        if (bytesRecebidos == -1) {
+            cout << "ERRO: Não foi possível obter a mensagem" << endl;
+            break;
+        }
+        if (bytesRecebidos == 0) {
+            cout << "O Servidor desconectou" << endl;
+            break;
+        }
 
-        // Display response
+        // Exibindo mensagem recebida
+        string mensagemRecebida = string(buffer, bytesRecebidos);
         cout << mensagemRecebida << endl;
 
-        // TODO: Finalizando conexão quando acertar a palavra 
-        if (mensagemSucesso == mensagemRecebida) {
+        // Ao acertar a palavra, o cliente recebe uma mensagem do tipo 4 
+        if (bitset<8>(4).to_string() == mensagemRecebida) {
             break;
         }
 
     } while(true);
 
-    // Close the socket
+    close(socketCliente);
 
     return 0;
 }
