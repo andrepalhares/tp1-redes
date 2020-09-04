@@ -78,6 +78,7 @@ int main(int argc, char* argv[]) {
     memset(buf, 0, 4096);
     int bytesReceived = recv(sock, buf, 4096, 0);
     cout << string(buf, bytesReceived) << endl;
+    vector<Mensagem> msgTipo2;
     
     do {
         // Enter lines of text
@@ -86,12 +87,11 @@ int main(int argc, char* argv[]) {
 
         // Send to server
         // Tratar a mensagem, colocando um tipo
-        vector<Mensagem> msgTipo2;
-
         msgTipo2.push_back(CriaMensagemTipo(2));
         msgTipo2.push_back(CriaMensagem(userInput));
 
         int sendResult = send(sock, msgTipo2[1].mensagem, 8, 0);
+        msgTipo2.clear();
         if (sendResult == -1) {
             cout << "Could not send to server!" << endl;
             continue;

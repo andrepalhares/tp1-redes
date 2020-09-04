@@ -68,7 +68,6 @@ Palavra letraExisteNaPalavra(string letra, Palavra palavraSorteada) {
     // int codigo = stoi(letra);
     // char caractere = char(codigo);
     char caractere = ConverteParaBinario(letra);
-    cout << caractere << endl;
 
     int posicao = palavraSorteada.palavra.find(caractere);
 
@@ -83,6 +82,20 @@ Palavra letraExisteNaPalavra(string letra, Palavra palavraSorteada) {
     }
 
     return palavraSorteada;
+}
+
+vector<int> retornaOcorrencias(string letra, string palavra) {
+    vector<int> ocorrencias;
+    char caractere = ConverteParaBinario(letra);
+
+    for (size_t i = 0; i < palavra.size(); i++) {
+        if (caractere == palavra[i]) {
+            ocorrencias.push_back(i);
+        }
+    }
+
+    cout << "ocorrencias: " << ocorrencias.size() << endl;
+    return ocorrencias;
 }
 
 bool checarSeAcabouJogo(Palavra palavraSorteada) {
@@ -107,6 +120,19 @@ Mensagem CriaMensagem(int numero) {
     Mensagem msg;
     msg.mensagem = ConverteChar(numero);
 
+    return msg;
+}
+
+char* ConverteMensagemTipo3(vector<Mensagem> msg3) {
+    char* msg;
+    strcpy(msg, msg3[1].mensagem);
+    
+    for (size_t i = 2; i < msg3.size(); i++) {
+        cout << msg3[i].mensagem << endl;
+        strcat(msg, " ");
+        strcat(msg, msg3[i].mensagem);
+    }
+    
     return msg;
 }
 
@@ -180,6 +206,9 @@ int main(int argc, char* argv[]) {
 
     // While recieving display message, echo message
     char buf[4096];
+    vector<int> ocorrencias;
+    vector<Mensagem> msgTipo3;
+    vector<Mensagem> msgTipo4;
     while(true) {
         // Clear the buffer
         memset(buf, 0, 4096);
@@ -196,23 +225,34 @@ int main(int argc, char* argv[]) {
         }
 
         // Display message
-        cout << "Received: " << string(buf, 0, bytesRecv) << endl;
+        // cout << "Received: " << string(buf, 0, bytesRecv) << endl;
         
         // TODO: Jogo de forca
-        palavraSorteada = letraExisteNaPalavra(string(buf, 0, bytesRecv), palavraSorteada);
-        if (checarSeAcabouJogo(palavraSorteada)) {
-            vector<Mensagem> msgTipo4;
+        // palavraSorteada = letraExisteNaPalavra(string(buf, 0, bytesRecv), palavraSorteada);
 
+        // Determina as ocorrências
+        ocorrencias = retornaOcorrencias(string(buf, 0, bytesRecv), palavraSorteada.palavra);
+        // Cria mensagem tipo 3
+        msgTipo3.push_back(CriaMensagem(3));
+        // Cria mensagem com a quantidade de ocorrências
+        msgTipo3.push_back(CriaMensagem(ocorrencias.size()));
+        // Cria a mensagem com as posicoes
+        for (size_t i = 0; i < ocorrencias.size(); i++) {
+            palavraSorteada.descobertas[ocorrencias[i]] = true;
+            msgTipo3.push_back(CriaMensagem(ocorrencias[i] + 1));
+        }
+        
+        if (checarSeAcabouJogo(palavraSorteada)) {
             msgTipo4.push_back(CriaMensagem(4));
 
             send(clientSocket, msgTipo4[0].mensagem, 8, 0);
-            // break;
+            msgTipo4.clear();
+        } else {
+            char* mensagemEnviada = ConverteMensagemTipo3(msgTipo3);
+
+            send(clientSocket, mensagemEnviada, strlen(mensagemEnviada) + 1, 0);
+            msgTipo3.clear();
         }
-
-        // TODO: Criar método para enviar a quantidade e posicoes da letra escolhida
-
-        // Resend message
-        send(clientSocket, buf, bytesRecv + 1, 0);
     }
 
     // Close socket
